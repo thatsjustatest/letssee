@@ -372,8 +372,14 @@ exports.run = function(server_name, text_channel_name, voice_channel_name, alias
 
 	bot.on("ready", () => {
 		var server = bot.guilds.find("name", server_name);
+		if(server === null) throw "Couldn't find server '" + server_name + "'";
+
 		var voice_channel = server.channels.find("name", voice_channel_name); //The voice channel the bot will connect to
+		if(voice_channel === null) throw "Couldn't find voice channel '" + voice_channel_name + "' in server '" + server_name + "'";
+		
 		text_channel = server.channels.find("name", text_channel_name); //The text channel the bot will use to announce stuff
+		if(text_channel === null) throw "Couldn't find text channel '#" + text_channel_name + "' in server '" + server_name + "'";
+
 		voice_channel.join().then(connection => {voice_connection = connection;}).catch(console.error);
 
 		fs.access(aliases_file_path, fs.F_OK, (err) => {
