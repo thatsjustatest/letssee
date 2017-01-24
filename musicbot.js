@@ -352,35 +352,14 @@ function is_bot_playing() {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 function get_video_id(string) {
-	var searchToken = "?v=";
-	var i = string.indexOf(searchToken);
-	
-	if(i == -1) {
-		searchToken = "&v=";
-		i = string.indexOf(searchToken);
+	var regex = /(?:\?v=|&v=|youtu\.be\/)(.*?)(?:\?|&|$)/;
+	var matches = string.match(regex);
+
+	if(matches) {
+		return matches[1];
+	} else {
+		return string;
 	}
-	
-	if(i == -1) {
-		searchToken = "youtu.be/";
-		i = string.indexOf(searchToken);
-	}
-	
-	if(i != -1) {
-		var substr = string.substring(i + searchToken.length);
-		var j = substr.indexOf("&");
-		
-		if(j == -1) {
-			j = substr.indexOf("?");
-		}
-		
-		if(j == -1) {
-			return substr;
-		} else {
-			return substr.substring(0,j);
-		}
-	}
-	
-	return string;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
