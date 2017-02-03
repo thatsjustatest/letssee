@@ -16,6 +16,7 @@
 const Discord = require("discord.js");
 const fs = require("fs");
 const ytdl = require("ytdl-core");
+const request = require("request");
 
 const bot = new Discord.Client({autoReconnect: true, max_message_cache: 0});
 
@@ -33,6 +34,8 @@ var aliases = {};
 var voice_connection = null;
 var voice_handler = null;
 var text_channel = null;
+
+var yt_api_key = null;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -79,6 +82,23 @@ var commands = [
 		parameters: ["video URL, ID or alias"],
 		execute: function(message, params) {
 			add_to_queue(params[1], message);
+		}
+	},
+
+	{
+		command: "search",
+		description: "Searches for a video on YouTube and adds it to the queue",
+		parameters: ["query"],
+		execute: function(message, params) {
+			if(yt_api_key === null) {
+				message.reply("You need a YouTube API key in order to use the !search command. Please see https://github.com/agubelu/discord-music-bot#obtaining-a-youtube-api-key");
+			} else {
+				var q = "";
+				for(var i = 1; i < params.length; i++) {
+					q += params[i] + " ";
+				}
+				search_video(message, q);
+			}
 		}
 	},
 
@@ -183,6 +203,33 @@ var commands = [
 			message.reply("Queue has been clered!");
 		}
 	},
+
+	{
+		command: "remove",
+		description: "Removes a song from the queue",
+		parameters: ["Request index or 'last'"],
+		execute: function(message, params) {
+			var index = params[1];
+
+			if(is_queue_empty()) {
+				message.reply("The queue is empty");
+				return;
+			} else if(isNaN(index) && index !== "last") {
+				message.reply("Argument '" + index + "' is not a valid index.");
+				return;
+			}
+
+			if(index === "last") { index = queue.length; }
+			index = parseInt(index);
+			if(index < 1 || index > queue.length) {
+				message.reply("Cannot remove request #" + index + " from the queue (there are only " + queue.length + " requests currently)");
+				return;
+			}
+
+			var deleted = queue.splice(index - 1, 1);
+			message.reply('Request "' + deleted[0].title +'" was removed from the queue.');
+		}
+	},
 	
 	{
 		command: "aliases",
@@ -276,7 +323,7 @@ function add_to_queue(video, message) {
 
 	ytdl.getInfo("https://www.youtube.com/watch?v=" + video_id, (error, info) => {
 		if(error) {
-			message.reply("The requested video could not be found.");
+			message.reply("The requested video does not exist or cannot be played.");
 		} else {
 			queue.push({title: info["title"], id: video_id, user: message.author.username});
 			message.reply('"' + info["title"] + '" has been added to the queue.');
@@ -347,6 +394,19 @@ function is_bot_playing() {
 	return voice_handler !== null;
 }
 
+function search_video(message, query) {
+	request("https://www.googleapis.com/youtube/v3/search?part=id&type=video&q=" + encodeURIComponent(query) + "&key=" + yt_api_key, (error, response, body) => {
+		var json = JSON.parse(body);
+		if("error" in json) {
+			message.reply("An error has occurred: " + json.error.errors[0].message + " - " + json.error.errors[0].reason);
+		} else if(json.items.length === 0) {
+			message.reply("No videos found matching the search criteria.");
+		} else {
+			add_to_queue(json.items[0].id.videoId, message);
+		}
+	})
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -398,4 +458,8 @@ exports.run = function(server_name, text_channel_name, voice_channel_name, alias
 	});
 
 	bot.login(token);
+}
+
+exports.setYoutubeKey = function(key) {
+	yt_api_key = key;
 }

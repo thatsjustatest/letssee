@@ -6,6 +6,7 @@ I made it totally *ad-hoc* for my personal server so it doesn't support multiple
 
 # Available commands
 - **!request <video/alias>** - Adds a YouTube video to the queue. You can provide the full URL, just the video ID or an alias.
+- **!search <query>** - Searches for a video on YouTube and adds it to the queue. Requires a [YouTube API key](#obtaining-a-youtube-api-key).
 - **!stop** - Stops the playback, the bot will not continue with the pending queue until !resume is issued.
 - **!resume** - Allows the bot to play videos from the queue again after !stop was issued.
 - **!np** - Displays the title of the video that is being played.
@@ -14,6 +15,7 @@ I made it totally *ad-hoc* for my personal server so it doesn't support multiple
 - **!skip** - Skips the video that is being currently played.
 - **!queue** - Displays the queue.
 - **!clearqueue** - Sets the queue to an empty state, discarding all pending requests.
+- **!remove <request index or 'last'>** - Removes a specific request from the queue. `!remove last` will delete the last request that was added.
 - **!setalias <alias> <video>**: Maps any word of your choice (*alias*) to a video URL or ID, so you can !request the alias instead.
 - **!deletealias <alias>** - Removes an existing alias.
 - **!aliases** - Displays the stored aliases.
@@ -45,3 +47,15 @@ The aliases file parameter can be just a filename or a path to a file. If it doe
 The bot will join the voice channel that you configured when it connects to the server, but obviously you can move it to other voice channels once it joins. The text channel is the one the bot will use to listen to commands and announce stuff. Keep in mind that all names are case-sensitive!
 
 Save it with whatever name you want (for instance, "bot.js") and then execute it using Node.JS: `node bot.js`. Your bot should now be up and running in your server!
+
+# Obtaining a YouTube API key
+In order to use the !search command, you must provide the bot with a YouTube API key of your own. The process is quite simple:
+
+1. Register a Google account in the unlikely case you don't have one.
+2. Create a new project in the [YouTube API Dashboard](https://console.developers.google.com/projectselector/apis/api/youtube/overview)
+3. On the top bar, you will find your active project next to the Google logo. Select the newly created project if it isn't already and then click Enable to allow the project to use the YouTube API.
+4. Click on "Create Credentials", select "YouTube Data API v3" on the first dialog, "Another UI" on the second and "Public data" on the third. Click the blue button and you will receive your key.
+5. Add the following line in your startup script:
+    ```js
+    bot.setYoutubeKey("place your API key here");
+    ```
