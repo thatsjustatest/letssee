@@ -282,7 +282,28 @@ var commands = [
 			}
 		}
 	},
-	
+
+	{
+		command: "setavatar",
+		description: "Set bot avatar, overriding the previous one if it already exists",
+		parameters: ["Image URL or alias"],
+		execute: function (message, params) {
+
+			var url = params[1];
+			if (aliases.hasOwnProperty(url.toLowerCase())) {
+				url = aliases[url.toLowerCase()];
+			}
+
+			bot.user.setAvatar(url).then(user => {
+				message.reply('✔ Avatar set!');
+			})
+			.catch((err) => {
+				message.reply('Error: Unable to set avatar');
+				console.log('Error on setavatar command:', err);
+			});
+		}
+	},
+
 ];
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
