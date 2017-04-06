@@ -348,6 +348,7 @@ function play_next_song() {
 
 	if(inform_np) {
 		text_channel.sendMessage('Now playing: "' + title + '" (requested by ' + user + ')');
+		bot.user.setGame(title);
 	}
 
 	var audio_stream = ytdl("https://www.youtube.com/watch?v=" + video_id);
@@ -355,6 +356,7 @@ function play_next_song() {
 
 	voice_handler.once("end", reason => {
 		voice_handler = null;
+		bot.user.setGame();
 		if(!stopped && !is_queue_empty()) {
 			play_next_song();
 		}
@@ -454,6 +456,7 @@ exports.run = function(server_name, text_channel_name, voice_channel_name, alias
 			}
 		});
 
+		bot.user.setGame();
 		console.log("Connected!");
 	});
 
