@@ -19,6 +19,7 @@ I made it totally *ad-hoc* for my personal server so it doesn't support multiple
 - **!setalias <alias> <video>**: Maps any word of your choice (*alias*) to a video URL or ID, so you can !request the alias instead.
 - **!deletealias <alias>** - Removes an existing alias.
 - **!aliases** - Displays the stored aliases.
+- **!setusername <username/alias>** - Set username of bot.
 
 # How to make it work?
 

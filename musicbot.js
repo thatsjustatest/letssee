@@ -282,7 +282,28 @@ var commands = [
 			}
 		}
 	},
-	
+
+	{
+		command: "setusername",
+		description: "Set username of bot",
+		parameters: ["Username or alias"],
+		execute: function (message, params) {
+
+			var userName = params[1];
+			if (aliases.hasOwnProperty(userName.toLowerCase())) {
+				userName = aliases[userName.toLowerCase()];
+			}
+
+			bot.user.setUsername(userName).then(user => {
+				message.reply('✔ Username set!');
+			})
+			.catch((err) => {
+				message.reply('Error: Unable to set username');
+				console.log('Error on setusername command:', err);
+			});
+		}
+	},
+
 ];
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
