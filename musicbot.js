@@ -196,9 +196,12 @@ var commands = [
 			if(is_queue_empty()) {
 				response = "the queue is empty.";
 			} else {
-				for(var i = 0; i < queue.length; i++) {
+				var long_queue = queue.length > 30;
+				for(var i = 0; i < (long_queue ? 30 : queue.length); i++) {
 					response += "\"" + queue[i]["title"] + "\" (requested by " + queue[i]["user"] + ")\n";
 				}
+
+				if(long_queue) response += "\n**...and " + (queue.length - 30) + " more.**";
 			}
 			
 			message.reply(response);
