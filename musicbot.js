@@ -76,14 +76,25 @@ var commands = [
 		}
 	},
 
-	{
-		command: "request",
-		description: "Adds the requested video to the playlist queue",
-		parameters: ["video URL, ID or alias"],
-		execute: function(message, params) {
-			add_to_queue(params[1], message);
-		}
-	},
+    {
+        command: "request",
+        description: "Adds the requested video to the playlist queue",
+        parameters: ["video URL, video ID, playlist URL or alias"],
+        execute: function (message, params) {
+            if(aliases.hasOwnProperty(params[1].toLowerCase())) {
+                params[1] = aliases[params[1].toLowerCase()];
+            }
+
+            var regExp = /^.*(youtu.be\/|list=)([^#\&\?]*).*/;
+            var match = params[1].match(regExp);
+
+            if (match && match[2]){
+                queue_playlist(match[2], message);
+            } else {
+                add_to_queue(params[1], message);
+            }
+        }
+    },
 
 	{
 		command: "search",
@@ -284,7 +295,28 @@ var commands = [
 	},
 
 	{
-		command: "setavatar",
+    command: "setusername",
+		description: "Set username of bot",
+		parameters: ["Username or alias"],
+		execute: function (message, params) {
+
+			var userName = params[1];
+			if (aliases.hasOwnProperty(userName.toLowerCase())) {
+				userName = aliases[userName.toLowerCase()];
+			}
+
+			bot.user.setUsername(userName).then(user => {
+				message.reply('✔ Username set!');
+			})
+			.catch((err) => {
+				message.reply('Error: Unable to set username');
+				console.log('Error on setusername command:', err);
+			});
+		}
+	},
+  
+  {
+    command: "setavatar",
 		description: "Set bot avatar, overriding the previous one if it already exists",
 		parameters: ["Image URL or alias"],
 		execute: function (message, params) {
@@ -299,10 +331,10 @@ var commands = [
 			})
 			.catch((err) => {
 				message.reply('Error: Unable to set avatar');
-				console.log('Error on setavatar command:', err);
-			});
+				console.log('Error on setavatar command:', err); 
+      });
 		}
-	},
+  }
 
 ];
 
@@ -334,7 +366,7 @@ bot.on("message", message => {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-function add_to_queue(video, message) {
+function add_to_queue(video, message, mute = false) {
 
 	if(aliases.hasOwnProperty(video.toLowerCase())) {
 		video = aliases[video.toLowerCase()];
@@ -344,10 +376,13 @@ function add_to_queue(video, message) {
 
 	ytdl.getInfo("https://www.youtube.com/watch?v=" + video_id, (error, info) => {
 		if(error) {
-			message.reply("The requested video does not exist or cannot be played.");
+			message.reply("The requested video (" + video_id + ") does not exist or cannot be played.");
+			console.log("Error (" + video_id + "): " + error);
 		} else {
 			queue.push({title: info["title"], id: video_id, user: message.author.username});
-			message.reply('"' + info["title"] + '" has been added to the queue.');
+			if (!mute) {
+				message.reply('"' + info["title"] + '" has been added to the queue.');
+			}
 			if(!stopped && !is_bot_playing() && queue.length === 1) {
 				play_next_song();
 			}
@@ -369,6 +404,7 @@ function play_next_song() {
 
 	if(inform_np) {
 		text_channel.sendMessage('Now playing: "' + title + '" (requested by ' + user + ')');
+		bot.user.setGame(title);
 	}
 
 	var audio_stream = ytdl("https://www.youtube.com/watch?v=" + video_id);
@@ -376,6 +412,7 @@ function play_next_song() {
 
 	voice_handler.once("end", reason => {
 		voice_handler = null;
+		bot.user.setGame();
 		if(!stopped && !is_queue_empty()) {
 			play_next_song();
 		}
@@ -428,6 +465,25 @@ function search_video(message, query) {
 	})
 }
 
+function queue_playlist(playlistId, message, pageToken = '') {
+	request("https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=" + playlistId + "&key=" + yt_api_key + "&pageToken=" + pageToken, (error, response, body) => {
+		var json = JSON.parse(body);
+		if ("error" in json) {
+			message.reply("An error has occurred: " + json.error.errors[0].message + " - " + json.error.errors[0].reason);
+		} else if (json.items.length === 0) {
+			message.reply("No videos found within playlist.");
+		} else {
+			for (var i = 0; i < json.items.length; i++) {
+				add_to_queue(json.items[i].snippet.resourceId.videoId, message, true)
+			}
+			if (json.nextPageToken == null){
+				return;
+			}
+			queue_playlist(playlistId, message, json.nextPageToken)
+		}
+	});
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -475,6 +531,7 @@ exports.run = function(server_name, text_channel_name, voice_channel_name, alias
 			}
 		});
 
+		bot.user.setGame();
 		console.log("Connected!");
 	});
 
